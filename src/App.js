@@ -1,28 +1,35 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, Link, useNavigate, useParams } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Link,
+  useNavigate,
+  useParams
+} from "react-router-dom";
 import axios from "axios";
-import CertificateModal from "./CertificateModal"
+import CertificateModal from "./CertificateModal";
 
+// ==========================
 // Login Component
+// ==========================
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-
   const handleLogin = async () => {
     try {
-      // Make the POST request
-      const res = await axios.post("https://n8n.kediritechnopark.my.id/webhook/login-account", { username, password });
-      
-      // Assuming the response contains a 'token' field
-      const token = res.data.token;
+      const res = await axios.post("https://n8n.kediritechnopark.my.id/webhook/login-account", {
+        username,
+        password
+      });
 
-      // If token exists, store it in localStorage and navigate to the dashboard
+      const token = res.data.token;
       if (token) {
-        localStorage.setItem("authToken", token); // Save token in localStorage
+        localStorage.setItem("authToken", token);
         console.log("Login successful. Token saved.");
-        navigate("/dashboard"); // Navigate to the dashboard
+        navigate("/dashboard");
       } else {
         alert("Login failed. Token not received.");
       }
@@ -40,19 +47,56 @@ const Login = () => {
         placeholder="Username"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-      />
+      /><br/>
       <input
         type="password"
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-      />
+      /><br/>
       <button onClick={handleLogin}>Login</button>
     </div>
   );
 };
 
-// Modal component
+// ==========================
+// Add Course Modal Component
+// ==========================
+const AddCourseModal = ({ isOpen, onClose, courseData, setCourseData, handleCourseCreation }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
+      justifyContent: "center", alignItems: "center", zIndex: 999
+    }}>
+      <div style={{ background: "white", padding: 20, borderRadius: 8, width: "400px" }}>
+        <h3>Add New Course</h3>
+        <input
+          type="text"
+          placeholder="Course Title"
+          value={courseData.courseTitle}
+          onChange={(e) => setCourseData({ ...courseData, courseTitle: e.target.value })}
+        /><br />
+        <input
+          type="text"
+          placeholder="Description"
+          value={courseData.description}
+          onChange={(e) => setCourseData({ ...courseData, description: e.target.value })}
+        /><br />
+        <div style={{ marginTop: 10 }}>
+          <button onClick={handleCourseCreation}>Create Course</button>
+          <button onClick={onClose} style={{ marginLeft: 10 }}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==========================
+// Add Certificate Modal
+// ==========================
 const AddCertificateModal = ({
   isOpen,
   onClose,
@@ -109,7 +153,9 @@ const AddCertificateModal = ({
   );
 };
 
-// Dashboard component
+// ==========================
+// Dashboard Component
+// ==========================
 const Dashboard = () => {
   const [courses, setCourses] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
@@ -117,6 +163,8 @@ const Dashboard = () => {
   const [selectedCertificateId, setSelectedCertificateId] = useState("");
 
   const [showCertificateForm, setShowCertificateForm] = useState(false);
+  const [showCourseForm, setShowCourseForm] = useState(false);
+
   const [certificateData, setCertificateData] = useState({
     recipientName: "",
     courseId: "",
@@ -125,16 +173,20 @@ const Dashboard = () => {
     validUntil: "",
   });
 
+  const [courseData, setCourseData] = useState({
+    courseTitle: "",
+    description: ""
+  });
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const res = await axios.get("https://n8n.kediritechnopark.my.id/webhook/get-dashboard");
         const data = res.data[0]?.data || [];
         setCourses(data.data);
-        console.log(data.data)
-        if (data.length > 0) {
-          setSelectedCourseId(data[0].course_id);
-          setSelectedCourse(data[0]);
+        if (data.length > 0 && data.data.length > 0) {
+          setSelectedCourseId(data.data[0].course_id);
+          setSelectedCourse(data.data[0]);
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -150,35 +202,37 @@ const Dashboard = () => {
     setSelectedCourse(course);
   };
 
-const handleCourseCreation = async () => {
-  try {
-    // Retrieve the auth token from localStorage
+  const handleCourseCreation = async () => {
     const token = localStorage.getItem("authToken");
+    if (!token) return alert("No token, please login.");
 
-    if (!token) {
-      alert("No authorization token found. Please log in.");
-      return;
-    }
-
-    // Make the POST request with the Authorization header
-    const response = await axios.post(
-      "https://n8n.kediritechnopark.my.id/webhook/create-course",
-      { ...courseData },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // Add token in the Authorization header
+    try {
+      const response = await axios.post(
+        "https://n8n.kediritechnopark.my.id/webhook/create-course",
+        {
+          title: courseData.courseTitle,
+          description: courseData.description
         },
-      }
-    );
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
 
-    if (response.data.success) {
-      alert("Course created successfully.");
+      if (response.data.success) {
+        alert("Course created successfully.");
+        setShowCourseForm(false);
+        setCourseData({ courseTitle: "", description: "" });
+
+        const res = await axios.get("https://n8n.kediritechnopark.my.id/webhook/get-dashboard");
+        const data = res.data[0]?.data || [];
+        setCourses(data.data);
+      }
+    } catch (error) {
+      console.error("Error creating course:", error);
+      alert("Failed to create course.");
     }
-  } catch (error) {
-    console.error("Error creating course:", error);
-    alert("Failed to create course.");
-  }
-};
+  };
+
   const handleCertificateCreation = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) return alert("No token, please login.");
@@ -194,11 +248,10 @@ const handleCourseCreation = async () => {
       if (response.data.success) {
         alert("Certificate created!");
         setShowCertificateForm(false);
-        // Refresh data
         const res = await axios.get("https://n8n.kediritechnopark.my.id/webhook/get-dashboard");
         const data = res.data[0]?.data || [];
-        setCourses(data);
-        const updatedCourse = data.find((c) => c.course_id === selectedCourseId);
+        setCourses(data.data);
+        const updatedCourse = data.data.find((c) => c.course_id === selectedCourseId);
         setSelectedCourse(updatedCourse);
       }
     } catch (err) {
@@ -209,18 +262,28 @@ const handleCourseCreation = async () => {
 
   return (
     <div style={{ fontFamily: "Arial", maxWidth: "900px", margin: "0 auto", padding: "20px" }}>
-      {/* Header like GitHub */}
+      {/* Header */}
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         borderBottom: "1px solid #ddd", paddingBottom: "10px", marginBottom: "10px"
       }}>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <select value={selectedCourseId} onChange={handleCourseChange}>
+          <select
+            value={selectedCourseId}
+            onChange={(e) => {
+              if (e.target.value === "add-course") {
+                setShowCourseForm(true);
+              } else {
+                handleCourseChange(e);
+              }
+            }}
+          >
             {courses.map(course => (
               <option key={course.course_id} value={course.course_id}>
                 {course.course_title || "(Untitled course)"}
               </option>
             ))}
+            <option value="add-course">+ Add new course</option>
           </select>
           <span>{courses.length} Course{courses.length > 1 ? "s" : null}</span>
         </div>
@@ -241,7 +304,7 @@ const handleCourseCreation = async () => {
         </div>
       </div>
 
-      {/* File list style */}
+      {/* Certificate list */}
       <div style={{ borderTop: "1px solid #ddd" }}>
         {(selectedCourse?.recipients || []).length === 0 ? (
           <div style={{ padding: "10px", color: "#888" }}>No certificates found for this course.</div>
@@ -258,15 +321,15 @@ const handleCourseCreation = async () => {
               <span>{cert.certificate_id}</span>
               <span>{cert.recipient_name}</span>
               <span>{cert.issue_date}</span>
-              {selectedCertificateId == cert.certificate_id &&
-                <CertificateModal isOpen={true} certificateDetails={cert} onClose={()=>setSelectedCertificateId('')}/>
+              {selectedCertificateId === cert.certificate_id &&
+                <CertificateModal isOpen={true} certificateDetails={cert} onClose={() => setSelectedCertificateId('')} />
               }
-
             </div>
           ))
         )}
       </div>
-      {/* Modal for Add Certificate */}
+
+      {/* Modals */}
       <AddCertificateModal
         isOpen={showCertificateForm}
         onClose={() => setShowCertificateForm(false)}
@@ -274,13 +337,21 @@ const handleCourseCreation = async () => {
         setCertificateData={setCertificateData}
         handleCertificateCreation={handleCertificateCreation}
       />
+
+      <AddCourseModal
+        isOpen={showCourseForm}
+        onClose={() => setShowCourseForm(false)}
+        courseData={courseData}
+        setCourseData={setCourseData}
+        handleCourseCreation={handleCourseCreation}
+      />
     </div>
   );
 };
 
-
-
-
+// ==========================
+// Certificate Wrapper
+// ==========================
 function CertificateWrapper() {
   const { id } = useParams();
   const [certificateDetails, setCertificateDetails] = useState(null);
@@ -292,7 +363,6 @@ function CertificateWrapper() {
         const response = await axios.get(
           `https://n8n.kediritechnopark.my.id/webhook/get-certificate?id=${id}`
         );
-        console.log(response)
         if (response.data && response.data.length > 0) {
           setCertificateDetails(response.data[0].data);
         }
@@ -306,19 +376,15 @@ function CertificateWrapper() {
     fetchCertificate();
   }, [id]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (!certificateDetails) return <div>No certificate found</div>;
 
-  if (!certificateDetails) {
-    return <div>No certificate found</div>;
-  }
-
-  return (
-    <CertificateModal isOpen={true} certificateDetails={certificateDetails} />
-  );
+  return <CertificateModal isOpen={true} certificateDetails={certificateDetails} />;
 }
 
+// ==========================
+// App Component
+// ==========================
 function App() {
   return (
     <Router>
