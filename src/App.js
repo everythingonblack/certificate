@@ -150,6 +150,35 @@ const Dashboard = () => {
     setSelectedCourse(course);
   };
 
+const handleCourseCreation = async () => {
+  try {
+    // Retrieve the auth token from localStorage
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      alert("No authorization token found. Please log in.");
+      return;
+    }
+
+    // Make the POST request with the Authorization header
+    const response = await axios.post(
+      "https://n8n.kediritechnopark.my.id/webhook/create-course",
+      { ...courseData },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add token in the Authorization header
+        },
+      }
+    );
+
+    if (response.data.success) {
+      alert("Course created successfully.");
+    }
+  } catch (error) {
+    console.error("Error creating course:", error);
+    alert("Failed to create course.");
+  }
+};
   const handleCertificateCreation = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) return alert("No token, please login.");
