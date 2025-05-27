@@ -53,7 +53,7 @@
 
 .name {
     margin-top: 0;
-    font-size: 46px;
+    font-size: 40px;
     font-family: 'Great Vibes', cursive;
     margin-bottom: 0px;
     color: #ff7600;
@@ -61,7 +61,7 @@
 }
 .nameUnderline {
     width: 300px;
-    margin-top: -16px;
+    margin-top: -12px;
     border-bottom: 1px solid black;
 }
 
@@ -71,7 +71,7 @@
 }
 .bodyText {
     font-weight: bold;
-    font-size: 19px;
+    font-size: 17px;
     text-align: center;
 }
 

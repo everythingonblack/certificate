@@ -66,7 +66,7 @@ const CertificateModal = ({ isOpen, onClose, certificateDetails }) => {
               />
               <div className={styles.dateQR}>
                 <QRCodeSVG
-                  value={`https://certification.kediritechnopark.com/${certificateDetails.certificate_id}`}
+                  value={`https://certificate.kediritechnopark.com/${certificateDetails.certificate_id}`}
                   size={64}
                 />
                 <p className={styles.date}>{certificateDetails.issue_date}</p>
