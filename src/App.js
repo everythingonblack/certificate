@@ -183,20 +183,32 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      const response = await axios.get("https://n8n.kediritechnopark.my.id/webhook/get-dashboard");
-      const courseList = response.data[0]?.data?.data || [];
-      setCourses(courseList);
+const fetchDashboardData = async () => {
+  try {
+    const token = getAuthToken(); // Ambil token dari fungsi
+    if (!token) return alert("No token found. Please log in.");
 
-      if (courseList.length > 0) {
-        setSelectedCourseId(courseList[0].course_id);
-        setSelectedCourse(courseList[0]);
+    const response = await axios.get(
+      "https://n8n.kediritechnopark.my.id/webhook/get-dashboard",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+    );
+
+    const courseList = response.data[0]?.data?.data || [];
+    setCourses(courseList);
+
+    if (courseList.length > 0) {
+      setSelectedCourseId(courseList[0].course_id);
+      setSelectedCourse(courseList[0]);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+  }
+};
+
 
   const handleCourseChange = (event) => {
     const courseId = event.target.value;
